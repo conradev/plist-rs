@@ -1,0 +1,16 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  cargo doc &&
+  echo "<meta http-equiv=refresh content=0;url=plist/index.html>" > target/doc/index.html &&
+  sudo pip install ghp-import &&
+  ghp-import -n target/doc &&
+  mkdir -p ~/.ssh &&
+  openssl aes-256-cbc -K $encrypted_b4d429863d94_key -iv $encrypted_b4d429863d94_iv -in .deploy_rsa.enc -out ~/.ssh/id_rsa -d &&
+  chmod 600 ~/.ssh/id_rsa &&
+  git push -fq git@github.com:conradev/plist-rs.git gh-pages

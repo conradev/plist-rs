@@ -1,0 +1,34 @@
+[package]
+name = "plist-rs"
+version = "0.1.0"
+authors = ["Conrad Kramer <ckrames1234@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/conradev/plist-rs"
+repository = "https://github.com/conradev/plist-rs"
+documentation = "https://conradev.github.io/plist-rs"
+description = "A property list parser"
+readme = "README.md"
+exclude = [
+  ".gitignore",
+  ".travis.yml",
+  ".deploy_rsa.enc",
+]
+
+[lib]
+name = "plist"
+
+[dependencies]
+chrono = "0.2"
+fnv = "1.0"
+rustc-serialize = "0.3"
+xml-rs = "0.3"
+
+[dev-dependencies]
+libc = "0.2"
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dev-dependencies]
+objc = "0.2"
+cocoa = "0.4"
+
+[features]
+libplist = []
