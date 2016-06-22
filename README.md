@@ -5,9 +5,21 @@
 
 [API Documentation][API documentation]
 
-plist-rs is a property list parser.
+plist-rs is a property list parser written in Rust.
 
-It supports both reading XML and binary property lists.
+### Features
+
+- Supports reading both XML and binary property lists
+- Equivalent performance to Apple's `CFBinaryPlist` implementation
+
+### To Do
+
+- Writing property lists
+- Zero-copy parsing of binary property lists
+
+### Known Issues
+
+- XML parsing is [slower](https://github.com/netvl/xml-rs/issues/126) than other libraries
 
 ## Getting Started
 
