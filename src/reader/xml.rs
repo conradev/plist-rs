@@ -34,13 +34,7 @@ fn xml_start<R: Iterator<Item = XmlResult<XmlEvent>>>(input: &mut Peekable<R>,
                                                       -> Result<()> {
     xml_event(input, |e| {
         match *e {
-            XmlEvent::StartElement { ref name, .. } => {
-                Some(if &name.local_name[..] == local_name {
-                    true
-                } else {
-                    false
-                })
-            }
+            XmlEvent::StartElement { ref name, .. } => Some(&name.local_name[..] == local_name),
             XmlEvent::Characters(ref _string) => None,
             _ => Some(false),
         }
@@ -53,13 +47,7 @@ fn xml_end<R: Iterator<Item = XmlResult<XmlEvent>>>(input: &mut Peekable<R>,
     let mut string = None;
     try!(xml_event(input, |e| {
         match *e {
-            XmlEvent::EndElement { ref name } => {
-                Some(if &name.local_name[..] == local_name {
-                    true
-                } else {
-                    false
-                })
-            }
+            XmlEvent::EndElement { ref name } => Some(&name.local_name[..] == local_name),
             XmlEvent::Characters(ref s) => {
                 // TODO: Don't clone
                 string = Some(s.clone());
