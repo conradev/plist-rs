@@ -1,34 +1,55 @@
 [package]
 name = "plist-rs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Conrad Kramer <ckrames1234@gmail.com>"]
+edition = "2021"
+rust-version = "1.74"
 license = "MIT"
 homepage = "https://github.com/conradev/plist-rs"
 repository = "https://github.com/conradev/plist-rs"
-documentation = "https://conradev.github.io/plist-rs"
-description = "A property list parser"
+documentation = "https://docs.rs/plist-rs"
+description = "Fast, lossless binary and XML property-list parsing"
+keywords = ["plist", "property-list", "bplist", "xml", "serde"]
+categories = ["parser-implementations", "encoding"]
 readme = "README.md"
 exclude = [
   ".gitignore",
-  ".travis.yml",
-  ".deploy_rsa.enc",
 ]
 
 [lib]
 name = "plist"
 
 [dependencies]
-chrono = "0.2"
-fnv = "1.0"
-rustc-serialize = "0.3"
-xml-rs = "0.3"
+fnv = { version = "1.0", optional = true }
+serde = { version = "1.0", optional = true }
+serde-lite = { version = "0.5", optional = true }
 
 [dev-dependencies]
-libc = "0.2"
-
-[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dev-dependencies]
-objc = "0.2"
-cocoa = "0.4"
+criterion = { version = "0.5", default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_test = "1.0"
 
 [features]
+default = ["binary", "xml", "backend-pure", "legacy-api"]
+binary = []
+xml = []
+backend-pure = []
+backend-cf-compat = []
+legacy-api = ["dep:fnv"]
+serde = ["dep:serde"]
+serde-lite = ["dep:serde-lite"]
+# Retained so manifests and benchmark invocations written for 0.1 keep working.
 libplist = []
+
+[[bench]]
+name = "comparison"
+harness = false
+required-features = ["binary", "xml", "backend-pure", "legacy-api"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lints.rust]
+# Kani injects this configuration while compiling proof harnesses. Declaring it
+# keeps ordinary Cargo builds warning-free without turning it into a feature.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }

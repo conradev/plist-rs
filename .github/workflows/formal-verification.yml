@@ -1,0 +1,24 @@
+name: Formal verification
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  kani:
+    name: Kani binary kernels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify pinned reference hashes
+        run: verification/verify-references.sh
+      - name: Model-check production parsing kernels
+        uses: model-checking/kani-github-action@v1
+        with:
+          kani-version: "0.67.0"
+          command: cargo-kani
+          args: "--features binary,backend-cf-compat"
