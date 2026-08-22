@@ -26,6 +26,19 @@ fn cf_binary_accepts_the_historical_version_wildcard() {
 }
 
 #[test]
+fn cf_binary_eight_bit_string_maps_bytes_to_unicode_scalars() {
+    let input = binary_singleton(&[0x52, 0x80, 0xff]);
+    let pure = parser(BackendKind::Pure, Format::Binary);
+    let cf = parser(BackendKind::CoreFoundation, Format::Binary);
+
+    assert!(pure.parse(&input).is_err());
+    assert_eq!(
+        cf.parse(&input).unwrap().root().as_str(),
+        Some("\u{80}\u{ff}")
+    );
+}
+
+#[test]
 fn cf_binary_exposes_null_uid_and_set_extensions() {
     let pure = parser(BackendKind::Pure, Format::Binary);
     let cf = parser(BackendKind::CoreFoundation, Format::Binary);

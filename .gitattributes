@@ -1,0 +1,3 @@
+# Preserve Apple's pinned APSL text byte-for-byte, including its historical
+# trailing whitespace.
+verification/verus/LICENSE -whitespace

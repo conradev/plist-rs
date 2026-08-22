@@ -14,6 +14,9 @@ categories = ["parser-implementations", "encoding"]
 readme = "README.md"
 exclude = [
   ".gitignore",
+  # The direct Apple-source Verus port is a separately licensed verification
+  # artifact and is intentionally not part of the MIT crates.io package.
+  "verification/verus",
 ]
 
 [lib]

@@ -109,7 +109,6 @@ fn marker_and_scalar_failures_use_their_stable_categories() {
         (binary_singleton(&[0x32]), ErrorKind::InvalidDate, 8),
         (binary_singleton(&[0x33, 0]), ErrorKind::InvalidDate, 9),
         (binary_singleton(&[0x42, 0xaa]), ErrorKind::InvalidData, 9),
-        (binary_singleton(&[0x51, 0xff]), ErrorKind::InvalidString, 9),
         (binary_singleton(&[0x52, b'x']), ErrorKind::InvalidString, 9),
     ];
 
@@ -118,6 +117,16 @@ fn marker_and_scalar_failures_use_their_stable_categories() {
             assert_binary_error(input, backend, *kind, *offset);
         }
     }
+
+    // The public profile enforces marker 0x5's nominal ASCII restriction.
+    // CoreFoundation instead maps every eight-bit payload byte to the same
+    // Unicode scalar, so 0xff is accepted there as U+00FF.
+    assert_binary_error(
+        &binary_singleton(&[0x51, 0xff]),
+        BackendKind::Pure,
+        ErrorKind::InvalidString,
+        9,
+    );
 }
 
 #[test]

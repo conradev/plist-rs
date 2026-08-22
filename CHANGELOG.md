@@ -11,8 +11,9 @@
 - Explicit format, backend, and defensive resource-limit configuration through
   `Parser`, `ParseOptions`, and `Limits`.
 - Optional full Serde and serde-lite typed frontends.
-- Pinned compatibility references, bounded formal-verification harnesses,
-  differential tests, stable benchmarks, and a feature-matrix CI workflow.
+- Pinned compatibility references, an executable Verus port reporting 212
+  verified component units, bounded Kani production harnesses,
+  differential tests, stable benchmarks, and feature-matrix CI workflows.
 
 ### Preserved
 

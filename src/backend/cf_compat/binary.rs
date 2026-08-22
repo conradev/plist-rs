@@ -422,7 +422,7 @@ struct SemanticFingerprint(u64);
 
 #[derive(Clone, Debug)]
 enum StringStorage {
-    Ascii(Range<usize>),
+    EightBit(Range<usize>),
     Utf16Be(Range<usize>),
 }
 
@@ -655,18 +655,38 @@ impl<'a, P: Profile> Decoder<'a, P> {
             ));
         }
         let payload = self.object_range(payload_start, length, ErrorKind::InvalidString)?;
-        if !self.source[payload.clone()].is_ascii() {
+        let bytes = &self.source[payload.clone()];
+        let node = if bytes.is_ascii() {
+            self.builder.source_string(payload.clone())
+        } else if P::backend() == BackendKind::CoreFoundation {
+            // Despite the marker's historical name, CoreFoundation's
+            // kCFStringEncodingASCII maps every byte through U+0000..U+00FF.
+            // Non-ASCII bytes cannot be borrowed as UTF-8, so only this rare
+            // compatibility form allocates a normalized string.
+            let capacity = length.checked_mul(2).ok_or_else(|| {
+                error_at(
+                    ErrorKind::LimitExceeded,
+                    payload.start,
+                    "eight-bit string allocation size overflows",
+                )
+            })?;
+            let mut value = String::new();
+            value
+                .try_reserve_exact(capacity)
+                .map_err(|_| allocation_error(payload.start, "eight-bit string"))?;
+            value.extend(bytes.iter().copied().map(char::from));
+            self.builder.owned_string(value)
+        } else {
             return Err(error_at(
                 ErrorKind::InvalidString,
                 payload.start,
-                "ASCII string contains a non-ASCII byte",
+                "public ASCII string contains a non-ASCII byte",
             ));
-        }
-        let node = self.builder.source_string(payload.clone());
+        };
         Ok(self.register(
             offset,
             node,
-            SemanticNode::String(StringStorage::Ascii(payload)),
+            SemanticNode::String(StringStorage::EightBit(payload)),
         ))
     }
 
@@ -1445,7 +1465,7 @@ fn wide_be_u64(bytes: &[u8]) -> u64 {
 #[inline]
 fn string_unit_len(storage: &StringStorage) -> usize {
     match storage {
-        StringStorage::Ascii(range) => range.len(),
+        StringStorage::EightBit(range) => range.len(),
         StringStorage::Utf16Be(range) => range.len() / 2,
     }
 }
@@ -1453,7 +1473,7 @@ fn string_unit_len(storage: &StringStorage) -> usize {
 #[inline]
 fn string_unit(source: &[u8], storage: &StringStorage, index: usize) -> u16 {
     match storage {
-        StringStorage::Ascii(range) => u16::from(source[range.start + index]),
+        StringStorage::EightBit(range) => u16::from(source[range.start + index]),
         StringStorage::Utf16Be(range) => {
             let offset = range.start + index * 2;
             u16::from_be_bytes([source[offset], source[offset + 1]])

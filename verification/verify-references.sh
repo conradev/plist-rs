@@ -43,6 +43,14 @@ download_and_verify \
   "$(lock_value license_sha256)" \
   "$reference_dir/APPLE_LICENSE"
 download_and_verify \
+  "${primary_repository/github.com/raw.githubusercontent.com}/${primary_commit}/$(lock_value format_header_path)" \
+  "$(lock_value format_header_sha256)" \
+  "$reference_dir/ForFoundationOnly.h"
+download_and_verify \
+  "${primary_repository/github.com/raw.githubusercontent.com}/${primary_commit}/$(lock_value date_path)" \
+  "$(lock_value date_sha256)" \
+  "$reference_dir/CFDate.c"
+download_and_verify \
   "${hardening_repository/github.com/raw.githubusercontent.com}/${hardening_commit}/$(lock_value hardening_binary_path)" \
   "$(lock_value hardening_binary_sha256)" \
   "$reference_dir/Corelibs-CFBinaryPList.c"

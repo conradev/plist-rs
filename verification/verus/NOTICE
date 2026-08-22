@@ -1,0 +1,18 @@
+Portions Copyright (c) 1998-2015 Apple Inc. All Rights Reserved.
+
+This directory contains Modifications of Original Code as defined by the
+Apple Public Source License Version 2.0. See LICENSE.
+
+Modified on 2026-08-22 by the plist-rs contributors: translated the
+pointer-free reader logic from the pinned CoreFoundation sources into
+executable Rust accepted by Verus; added mathematical specifications,
+preconditions, postconditions, loop invariants, and proof-only code; replaced
+pointer operations with bounds-checked byte offsets; and totalized selected C
+undefined-behavior cases as documented in PORT_MAP.md.
+
+Original source:
+  https://github.com/opensource-apple/CF
+  commit 3cc41a76b1491f50813e28a4ec09954ffa359e6f
+
+The MIT-licensed plist-rs crate is a Larger Work. This APSL-covered directory
+is excluded from the crates.io package and retains its separate license.

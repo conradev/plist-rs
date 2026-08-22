@@ -1,0 +1,8 @@
+release=0.2026.08.15.7d4628a
+tag=release/0.2026.08.15.7d4628a
+rust_toolchain=1.97.1
+vstd=0.0.0-2026-08-09-0044
+linux_asset=verus-0.2026.08.15.7d4628a-x86-linux.zip
+linux_sha256=0467d3dd832e29d301abdd83d60237f0299d0a0acba3041388af066c8b31d1e4
+macos_arm64_asset=verus-0.2026.08.15.7d4628a-arm64-macos.zip
+macos_arm64_sha256=a9d03889dfbf841c92565be605cd857b4171943dac564b1f4c00ddcda9830ada

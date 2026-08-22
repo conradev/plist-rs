@@ -148,12 +148,20 @@ Rust 1.74 or newer.
 
 [CONFORMANCE.md](CONFORMANCE.md) documents the profile differences, pinned
 reference revisions, copying contract, and compatibility-oracle strategy.
-[verification/README.md](verification/README.md) defines the bounded formal
-claim and, just as importantly, what it does not prove. Whole-program identity
-with unpublished current Darwin Foundation is not claimed.
+[verification/README.md](verification/README.md) documents two complementary
+machine-checked layers: an executable Verus port of source-traced
+CoreFoundation reader components, and bounded Kani proofs over selected
+production parsing kernels. The Verus run currently reports 212 verified units
+without trusted proof shortcuts. It proves each mapped Rust
+component against its mathematical specification; it does not establish an
+end-to-end theorem over the original C translation units or the production
+backend. Whole-program identity with unpublished current Darwin Foundation is
+not claimed.
 
 ## License
 
-The Rust implementation is MIT licensed. The separately linked Apple reference
-sources are not vendored; their APSL-2.0 and Apache-2.0 licensing and immutable
-revision hashes are recorded solely as compatibility provenance.
+The published Rust crate is MIT licensed. The direct Apple-source Verus port in
+`verification/verus` is APSL-2.0 covered, retains its own license and notices,
+and is excluded from the crates.io package. Other Apple and Swift reference
+sources are not vendored; their licenses and immutable revision hashes are
+recorded as compatibility provenance.

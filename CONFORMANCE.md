@@ -59,24 +59,45 @@ source of the current macOS Foundation binary. Verification therefore draws on:
 
 ## Verification claim
 
-The 0.2 proof target is deliberately narrower than whole-program equivalence:
+The 0.2 machine checks have two deliberately distinct targets.
+
+The executable Verus port establishes an unbounded component theorem:
+
+> For every finite input satisfying a mapped component's contract, the
+> executable Rust result equals that component's checked-in mathematical
+> specification.
+
+The current Verus suite reports 212 verified units spanning binary
+header/trailer/offset scanning, wire-object dispatch, an abstract object graph,
+XML lexical and scalar behavior, and abstract XML structure transitions. The
+mapping from pinned C fragments to the mathematical specifications is
+human-reviewed; Verus does not ingest or prove the original C translation
+units. The graph and XML layers also retain documented byte-to-model bridge
+obligations, so this is not an end-to-end proof of the production parser.
+
+Kani independently establishes a bounded production-kernel theorem:
 
 > Under the stated 64-bit platform assumptions, the verified scalar decoding
 > kernels have the same result as their executable specifications for every
 > value in each published harness domain.
 
-Machine checks cover the bounded integer fold, format-`00` signedness,
-checked object-range arithmetic, default-limit table-layout arithmetic,
-address-width capacity, and inline-count marker selection. Complete decoders
-are additionally checked by deterministic malformed-input, regression, and
-macOS differential corpora. Extended-count payload parsing, allocation failure,
-CoreFoundation object identity,
-mutability, logging, exact localized error text, and unpublished current-Darwin
-internals are outside the formal claim. `verification/README.md` records the
-exact domains and trusted boundary.
+Those harnesses cover the bounded integer fold, format-`00` signedness, checked
+object-range arithmetic, default-limit table-layout arithmetic, address-width
+capacity, and inline-count marker selection in the actual MIT crate. Complete
+decoders are additionally checked by deterministic malformed-input,
+regression, and macOS differential corpora. A pinned Verus binary, Rust, vstd,
+Z3, and the human C-to-spec transcription form the Verus trusted boundary;
+Kani and its compiler form the production-kernel proof boundary.
 
-That boundary matters: calling bounded model checking or fuzzing a proof of
-universal, current-macOS equivalence would be inaccurate.
+Allocation failure, the full CoreFoundation string/encoding and floating-point
+conversion runtimes, object retain/mutability/logging behavior, exact localized
+error text, old-style plist fallback, compiled-C equivalence, and unpublished
+current-Darwin internals remain outside the formal claim.
+`verification/README.md` records the exact domains and bridge obligations.
+
+That boundary matters: neither deductive verification of isolated components
+nor bounded model checking of production kernels is a proof of universal,
+current-macOS whole-program equivalence.
 
 ## Deliberate and known deviations
 
