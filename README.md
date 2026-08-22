@@ -148,20 +148,23 @@ Rust 1.74 or newer.
 
 [CONFORMANCE.md](CONFORMANCE.md) documents the profile differences, pinned
 reference revisions, copying contract, and compatibility-oracle strategy.
-[verification/README.md](verification/README.md) documents two complementary
-machine-checked layers: an executable Verus port of source-traced
-CoreFoundation reader components, and bounded Kani proofs over selected
-production parsing kernels. The Verus run currently reports 212 verified units
-without trusted proof shortcuts. It proves each mapped Rust
-component against its mathematical specification; it does not establish an
-end-to-end theorem over the original C translation units or the production
-backend. Whole-program identity with unpublished current Darwin Foundation is
-not claimed.
+[verification/README.md](verification/README.md) documents three complementary
+machine-checked layers. SAW proves the pinned C `_getSizedInt`, a
+source-faithful Rust port, and the exact production Rust kernel byte-equivalent
+for every `u8` width and every possible byte buffer in the published
+compiled-LLVM memory domain, both directly and against an independent Cryptol
+specification. An executable Verus port proves broader source-traced reader
+components, currently
+212 verified units without trusted proof shortcuts. Kani checks selected
+production parsing kernels throughout their published domains. These are real
+component theorems, not an end-to-end theorem for either complete parser;
+whole-program identity with unpublished current Darwin Foundation is not
+claimed.
 
 ## License
 
-The published Rust crate is MIT licensed. The direct Apple-source Verus port in
-`verification/verus` is APSL-2.0 covered, retains its own license and notices,
-and is excluded from the crates.io package. Other Apple and Swift reference
-sources are not vendored; their licenses and immutable revision hashes are
-recorded as compatibility provenance.
+The published Rust crate is MIT licensed. The source-faithful ports in
+`verification/verus` and `verification/saw` are APSL-2.0 covered, retain their
+own licenses and notices, and are excluded from the crates.io package. Other
+Apple and Swift reference sources are not vendored; their licenses and
+immutable revision hashes are recorded as compatibility provenance.

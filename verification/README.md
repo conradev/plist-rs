@@ -1,16 +1,19 @@
 # Verification
 
-This directory pins the compatibility references and carries two independent
+This directory pins the compatibility references and carries three independent
 machine-checked layers:
 
-1. an APSL-2.0 executable Verus port of source-traced CoreFoundation reader
+1. SAW/Crucible relational proofs over compiled pinned C, an APSL-2.0 Rust
+   port, and the exact production Rust sized-integer kernel;
+2. an APSL-2.0 executable Verus port of source-traced CoreFoundation reader
    components; and
-2. Kani harnesses over selected private kernels in the production MIT parser.
+3. Kani harnesses over selected private kernels in the production MIT parser.
 
-The distinction matters. The Verus files are direct source-corresponding
-components but are not linked into the production crate. Kani checks actual
-production functions but only within each harness domain. Neither is presented
-as a whole-program C-to-Rust theorem.
+The distinction matters. SAW provides a literal C-to-Rust theorem, but only for
+the published sized-integer domain. The broader Verus files are direct
+source-corresponding components but are not linked into the production crate.
+Kani checks actual production functions but only within each harness domain.
+None is presented as a whole-program parser theorem.
 
 ## Reference lock
 
@@ -36,7 +39,35 @@ Pinned primary sources:
 - <https://github.com/opensource-apple/CF/blob/3cc41a76b1491f50813e28a4ec09954ffa359e6f/ForFoundationOnly.h>
 
 `verify-references.sh` downloads every immutable revision and checks the
-recorded hash before either formal CI job runs.
+recorded hash before the reference-backed formal CI jobs run.
+
+## Compiled C-to-Rust byte equivalence
+
+`saw/` uses pinned SAW 1.5.1, Crucible, Cryptol, Z3, Rust 1.74, and LLVM/Clang
+20. It checks the complete pinned `CFBinaryPList.c` hash, extracts
+`_getSizedInt` byte-for-byte and checks the fragment hash, then compiles:
+
+- the extracted C function;
+- a source-faithful Rust translation; and
+- `src/backend/cf_compat/binary_kernels.rs`, the exact file called by the
+  production parser.
+
+One symbolic 255-byte allocation and one symbolic `u8` width cover every width
+0 through 255 and every possible byte value. Nine vacuity-checked proofs with
+no overrides establish three independent refinements to Cryptol (`be64` and
+the full-domain `beSized`) and all three direct pairwise relations: C-to-port,
+port-to-production, and C-to-production. Six more proofs cover the
+successful-path `_readInt` value/cursor projection across all 16 low nibbles
+and all 128 value-influencing bytes, including the historical width-to-`u8`
+conversion. That projection's C composition adapter is trusted; it is not a
+literal proof of `_readInt`'s pointer and bounds checks. The generic C theorem
+requires no strengthened alignment. Native x86 CI adds six direct theorems for
+Apple's typed-load fast path under its explicit eight-byte-alignment
+precondition.
+
+[`saw/README.md`](saw/README.md) records the exact compiler flags, hashes,
+trusted boundary, reproduction command, and undefined-behavior exclusion. The
+source-faithful port and license are excluded from the MIT crate package.
 
 ## Executable Verus port
 
@@ -96,11 +127,14 @@ is covered only by differential tests.
 
 The machine-checked claim is therefore:
 
-> Each Verus executable component refines its checked-in mathematical
-> specification for every finite input in its stated contract, and each Kani
+> The pinned C, source-faithful Rust, and production Rust sized-integer
+> implementations are byte-equivalent throughout the published SAW domain;
+> each Verus executable component refines its checked-in mathematical
+> specification for every finite input in its stated contract; and each Kani
 > production harness satisfies its property throughout its published domain.
 
-The human-reviewed mapping from pinned C fragments to Verus specifications is
-not a theorem over compiled C. A green formal workflow is not evidence about
-arbitrary future CoreFoundation releases, C undefined behavior outside the
-defined-execution domain, or unpublished current-Darwin internals.
+Outside the SAW-sized-integer theorem, the human-reviewed mapping from pinned C
+fragments to Verus specifications is not a theorem over compiled C. A green
+formal workflow is not evidence about arbitrary future CoreFoundation
+releases, C undefined behavior outside the defined-execution domain, or
+unpublished current-Darwin internals.

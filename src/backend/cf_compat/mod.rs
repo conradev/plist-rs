@@ -2,6 +2,8 @@
 
 #[cfg(feature = "binary")]
 mod binary;
+#[cfg(feature = "binary")]
+mod binary_kernels;
 #[allow(dead_code)]
 #[cfg(feature = "xml")]
 mod xml;

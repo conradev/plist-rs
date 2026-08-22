@@ -39,6 +39,22 @@ fn cf_binary_eight_bit_string_maps_bytes_to_unicode_scalars() {
 }
 
 #[test]
+fn cf_binary_extended_count_preserves_c_uint8_width_narrowing() {
+    // CFBinaryPList.c's `_readInt` computes 2^8 in uint64_t, passes it through
+    // `_getSizedInt`'s uint8_t width (therefore zero), then advances all 256
+    // bytes. The final 0x01 proves that folding the declared width would differ.
+    let mut object = vec![0x4f, 0x18];
+    object.extend(std::iter::repeat(0).take(255));
+    object.push(1);
+    let input = binary_singleton(&object);
+
+    let pure = parser(BackendKind::Pure, Format::Binary);
+    let cf = parser(BackendKind::CoreFoundation, Format::Binary);
+    assert!(pure.parse(&input).is_err());
+    assert_eq!(cf.parse(&input).unwrap().root().as_data(), Some(&[][..]));
+}
+
+#[test]
 fn cf_binary_exposes_null_uid_and_set_extensions() {
     let pure = parser(BackendKind::Pure, Format::Binary);
     let cf = parser(BackendKind::CoreFoundation, Format::Binary);

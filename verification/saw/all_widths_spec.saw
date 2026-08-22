@@ -1,0 +1,22 @@
+import "SizedInt.cry";
+
+let i8 = llvm_int 8;
+
+// An implementation-independent Cryptol recurrence over all 255 bytes and a
+// fully symbolic u8 width. The allocation has no strengthened alignment.
+let sized_spec = do {
+    bytes <- llvm_fresh_var "bytes" (llvm_array 255 i8);
+    width <- llvm_fresh_var "width" i8;
+    p <- llvm_alloc_readonly (llvm_array 255 i8);
+    llvm_points_to p (llvm_term bytes);
+    llvm_execute_func [p, llvm_term width];
+    llvm_return (llvm_term {{ beSized bytes width }});
+};
+
+m <- llvm_load_module "sized_int_equivalence_generic.bc";
+
+c_sized <- llvm_verify m "saw_apple_get_sized_int_n" [] true sized_spec z3;
+port_sized <- llvm_verify m "saw_port_sized_int_n" [] true sized_spec z3;
+production_sized <- llvm_verify m "saw_production_sized_int_n" [] true sized_spec z3;
+
+print "C, Rust port, and production Rust independently refine Cryptol beSized for all widths and bytes.";

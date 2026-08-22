@@ -11,9 +11,11 @@
 - Explicit format, backend, and defensive resource-limit configuration through
   `Parser`, `ParseOptions`, and `Limits`.
 - Optional full Serde and serde-lite typed frontends.
-- Pinned compatibility references, an executable Verus port reporting 212
-  verified component units, bounded Kani production harnesses,
-  differential tests, stable benchmarks, and feature-matrix CI workflows.
+- Pinned compatibility references; compiled SAW proofs connecting pinned C, a
+  source-faithful Rust port, and the production sized-integer kernel over every
+  byte and `u8` width; an executable Verus port reporting 212 verified
+  component units; bounded Kani production harnesses; differential tests;
+  stable benchmarks; and feature-matrix CI workflows.
 
 ### Preserved
 

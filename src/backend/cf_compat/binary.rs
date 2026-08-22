@@ -19,6 +19,7 @@ use std::hash::{BuildHasher, Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::Range;
 
+use super::binary_kernels::{cf_sized_int_value, wide_be_u64};
 use crate::document::{NodeId, Parsed, ParsedBuilder};
 use crate::{BackendKind, Date, Error, ErrorKind, Format, Integer, ParseOptions, Real, Result};
 
@@ -72,6 +73,7 @@ trait Profile {
     fn valid_header(source: &[u8]) -> bool;
     fn valid_table_width(width: usize) -> bool;
     fn valid_count_width(width: usize) -> bool;
+    fn count_value(bytes: &[u8], width: usize) -> u64;
     fn permits_null() -> bool;
     fn permits_uid() -> bool;
     fn permits_set() -> bool;
@@ -101,6 +103,14 @@ impl Profile for CoreFoundationProfile {
     #[inline]
     fn valid_count_width(_width: usize) -> bool {
         true
+    }
+
+    #[inline]
+    fn count_value(bytes: &[u8], width: usize) -> u64 {
+        // `_readInt` holds the power-of-two width in uint64_t but passes it to
+        // `_getSizedInt` through a uint8_t parameter. Preserve that defined C
+        // conversion while still advancing over the full declared payload.
+        cf_sized_int_value(bytes, width)
     }
 
     #[inline]
@@ -147,6 +157,11 @@ impl Profile for PureProfile {
     #[inline]
     fn valid_count_width(width: usize) -> bool {
         matches!(width, 1 | 2 | 4 | 8)
+    }
+
+    #[inline]
+    fn count_value(bytes: &[u8], _width: usize) -> u64 {
+        wide_be_u64(bytes)
     }
 
     #[inline]
@@ -960,7 +975,7 @@ impl<'a, P: Profile> Decoder<'a, P> {
         }
         let payload_start = count_marker_offset + 1;
         let payload = self.object_range(payload_start, width, ErrorKind::InvalidInteger)?;
-        let value = wide_be_u64(&self.source[payload]);
+        let value = P::count_value(&self.source[payload], width);
         if value > isize::MAX as u64 {
             return Err(error_at(
                 ErrorKind::InvalidInteger,
@@ -1451,15 +1466,6 @@ fn checked_object_range(start: usize, length: usize, limit: usize) -> RangeCheck
     } else {
         RangeCheck::Valid(start..end)
     }
-}
-
-/// Reads a Core Foundation sized integer. Widths greater than eight retain
-/// only the low 64 bits, matching unsigned C arithmetic in the pinned target.
-#[inline]
-fn wide_be_u64(bytes: &[u8]) -> u64 {
-    bytes.iter().fold(0_u64, |value, byte| {
-        value.wrapping_shl(8) | u64::from(*byte)
-    })
 }
 
 #[inline]

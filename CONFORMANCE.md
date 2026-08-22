@@ -59,7 +59,25 @@ source of the current macOS Foundation binary. Verification therefore draws on:
 
 ## Verification claim
 
-The 0.2 machine checks have two deliberately distinct targets.
+The 0.2 machine checks have three deliberately distinct targets.
+
+SAW establishes a compiled cross-language byte theorem for the sized-integer
+reader kernel:
+
+> For every width representable by `uint8_t` and every initialized input byte
+> in the complete span, pinned C `_getSizedInt`, the source-faithful Rust port,
+> and the exact production Rust kernel return the same 64 output bits and equal
+> the independent Cryptol recurrence.
+
+The generic C path is alignment-free. Native x86 verification covers Apple's
+typed-load fast path under an eight-byte-alignment precondition. All three
+pairwise relations are checked directly in addition to the shared-spec
+refinements; future compiler and adapter drift cannot rely only on transitivity.
+An additional checked composition covers `_readInt`'s successful-path value and
+cursor arithmetic, including its historical `uint64_t`-to-`uint8_t` width
+conversion. Its C projection adapter omits the original pointer/bounds guards
+and remains explicitly trusted; it is not a literal compiled theorem for the
+complete `_readInt` function.
 
 The executable Verus port establishes an unbounded component theorem:
 
@@ -87,12 +105,15 @@ capacity, and inline-count marker selection in the actual MIT crate. Complete
 decoders are additionally checked by deterministic malformed-input,
 regression, and macOS differential corpora. A pinned Verus binary, Rust, vstd,
 Z3, and the human C-to-spec transcription form the Verus trusted boundary;
-Kani and its compiler form the production-kernel proof boundary.
+Kani and its compiler form the production-kernel proof boundary. SAW/Crucible,
+Cryptol, Z3, Rust/LLVM, Clang, llvm-link, the proof adapters, and the published
+source/LLVM preconditions form the cross-language proof boundary.
 
 Allocation failure, the full CoreFoundation string/encoding and floating-point
 conversion runtimes, object retain/mutability/logging behavior, exact localized
-error text, old-style plist fallback, compiled-C equivalence, and unpublished
-current-Darwin internals remain outside the formal claim.
+error text, old-style plist fallback, compiled-C equivalence outside the
+sized-integer theorem, and unpublished current-Darwin internals remain outside
+the formal claim.
 `verification/README.md` records the exact domains and bridge obligations.
 
 That boundary matters: neither deductive verification of isolated components
