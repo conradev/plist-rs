@@ -1,7 +1,14 @@
+#![cfg(all(
+    feature = "binary",
+    feature = "xml",
+    feature = "backend-pure",
+    feature = "legacy-api"
+))]
+
 extern crate plist;
 
-use std::fs::File;
 use plist::Plist;
+use std::fs::File;
 
 #[test]
 fn test_equality() {

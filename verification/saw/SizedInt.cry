@@ -1,0 +1,54 @@
+module SizedInt where
+
+// Independent mathematical interpretation of eight big-endian bytes.
+be64 : [8][8] -> [64]
+be64 bytes = join bytes
+
+// Fold exactly the prefix selected by an unsigned eight-bit width. The
+// recurrence deliberately retains only [64] bits at every step.
+beSized : [255][8] -> [8] -> [64]
+beSized bytes width = states ! 0
+  where
+    indices : [255][8]
+    indices = [0 .. 254]
+
+    states : [256][64]
+    states = [0] #
+      [ if index < width
+          then (value << 8) || zext byte
+          else value
+      | index <- indices
+      | byte <- bytes
+      | value <- states
+      ]
+
+// The most bytes `_readInt` can actually pass to `_getSizedInt`: widths
+// 1..128 remain unchanged, while 256..32768 convert to zero through uint8_t.
+beSized128 : [128][8] -> [8] -> [64]
+beSized128 bytes width = states ! 0
+  where
+    indices : [128][8]
+    indices = [0 .. 127]
+
+    states : [129][64]
+    states = [0] #
+      [ if index < width
+          then (value << 8) || zext byte
+          else value
+      | index <- indices
+      | byte <- bytes
+      | value <- states
+      ]
+
+declaredWidth : [8] -> [64]
+declaredWidth marker = (1 : [64]) << (marker && 0x0f)
+
+foldedWidth : [8] -> [8]
+foldedWidth marker = drop (declaredWidth marker)
+
+// Canonical byte record: big-endian value followed by the cursor after the
+// marker plus the complete declared payload.
+readIntSuccessProjection : [128][8] -> [8] -> [16][8]
+readIntSuccessProjection bytes marker =
+  split (beSized128 bytes (foldedWidth marker)) #
+  split (1 + declaredWidth marker)

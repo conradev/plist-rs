@@ -1,0 +1,21 @@
+import "SizedInt.cry";
+
+let i8 = llvm_int 8;
+
+// This is independent of all three implementations: Cryptol's join places
+// bytes[0] in the high eight bits and bytes[7] in the low eight bits.
+let be64_spec = do {
+    bytes <- llvm_fresh_var "bytes" (llvm_array 8 i8);
+    p <- llvm_alloc_readonly_aligned 8 (llvm_array 8 i8);
+    llvm_points_to p (llvm_term bytes);
+    llvm_execute_func [p];
+    llvm_return (llvm_term {{ be64 bytes }});
+};
+
+m <- llvm_load_module "sized_int_equivalence_generic.bc";
+
+c_be64 <- llvm_verify m "saw_apple_get_sized_int_8" [] true be64_spec z3;
+port_be64 <- llvm_verify m "saw_port_sized_int_8" [] true be64_spec z3;
+production_be64 <- llvm_verify m "saw_production_sized_int_8" [] true be64_spec z3;
+
+print "C, Rust port, and production Rust independently refine Cryptol be64 for every eight-byte input.";

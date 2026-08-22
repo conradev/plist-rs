@@ -1,0 +1,17 @@
+Portions Copyright (c) 1998-2015 Apple Inc. All Rights Reserved.
+
+This directory contains a Modification of Original Code as defined by the
+Apple Public Source License Version 2.0. See LICENSE.
+
+Modified on 2026-08-22 by the plist-rs contributors: translated the pinned
+CoreFoundation `_getSizedInt` loop into source-faithful Rust; added proof-only
+C and Rust ABI adapters, including a successful `_readInt` value/cursor
+projection; and added SAW/Crucible/Cryptol relational proofs.
+
+Original source:
+  https://github.com/opensource-apple/CF
+  commit 3cc41a76b1491f50813e28a4ec09954ffa359e6f
+
+The original function is extracted only after its pinned source hashes pass.
+The MIT plist-rs production file is compiled directly through a Rust #[path]
+module; it is not copied into this separately licensed directory.

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: Test every feature
+        run: cargo +stable test --all-features
+      - name: Test documentation
+        run: cargo +stable test --all-features --doc
+
+  feature-matrix:
+    name: Feature matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal
+      - run: cargo +stable check --no-default-features
+      - run: cargo +stable test --no-default-features --features binary,backend-pure
+      - run: cargo +stable test --no-default-features --features xml,backend-pure
+      - run: cargo +stable test --no-default-features --features binary,backend-cf-compat
+      - run: cargo +stable test --no-default-features --features xml,backend-cf-compat
+      - run: cargo +stable check --all-features
+
+  quality:
+    name: Format, lint, docs, and benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install stable Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+      - run: cargo +stable fmt --all -- --check
+      - run: cargo +stable clippy --all-features --all-targets -- -D warnings
+      - run: cargo +stable doc --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+      - run: cargo +stable bench --all-features --no-run
+
+  msrv:
+    name: Rust 1.74
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install minimum supported Rust
+        run: rustup toolchain install 1.74.0 --profile minimal
+      - run: cargo +1.74.0 check --all-features --lib

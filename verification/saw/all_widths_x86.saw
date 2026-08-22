@@ -1,0 +1,20 @@
+let i8 = llvm_int 8;
+
+// Apple's x86 branches make typed 2/4/8-byte loads. Their LLVM semantics need
+// the matching alignment; the symbolic contents and u8 width remain arbitrary.
+let all_widths_x86_relation = do {
+    bytes <- llvm_fresh_var "bytes" (llvm_array 255 i8);
+    width <- llvm_fresh_var "width" i8;
+    p <- llvm_alloc_readonly_aligned 8 (llvm_array 255 i8);
+    llvm_points_to p (llvm_term bytes);
+    llvm_execute_func [p, llvm_term width];
+    llvm_return (llvm_term {{ 1 : [8] }});
+};
+
+m <- llvm_load_module "sized_int_equivalence_x86.bc";
+
+c_port_x86 <- llvm_verify m "saw_c_port_equivalent_n" [] true all_widths_x86_relation z3;
+port_production_x86 <- llvm_verify m "saw_port_production_equivalent_n" [] true all_widths_x86_relation z3;
+c_production_x86 <- llvm_verify m "saw_c_production_equivalent_n" [] true all_widths_x86_relation z3;
+
+print "Apple x86 fast path <-> Rust port <-> production Rust: all widths and aligned input bytes proved equivalent.";

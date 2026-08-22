@@ -1,0 +1,102 @@
+name: Formal verification
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  saw:
+    name: SAW C ↔ Rust byte equivalence
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify pinned reference hashes
+        run: verification/verify-references.sh
+      - name: Install the proof Rust toolchain
+        run: |
+          toolchain="$(sed -n 's/^rust_toolchain=//p' verification/saw/saw.lock)"
+          test -n "$toolchain"
+          rustup toolchain install "$toolchain" --profile minimal
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v21
+      - name: Download pinned SAW with solvers
+        run: |
+          set -eu
+          saw_version="$(sed -n 's/^saw_version=//p' verification/saw/saw.lock)"
+          asset="$(sed -n 's/^linux_x86_64_asset=//p' verification/saw/saw.lock)"
+          sha256="$(sed -n 's/^linux_x86_64_sha256=//p' verification/saw/saw.lock)"
+          test -n "$saw_version" && test -n "$asset" && test -n "$sha256"
+          archive="$RUNNER_TEMP/$asset"
+          curl --fail --location --retry 3 \
+            "https://github.com/GaloisInc/saw-script/releases/download/v$saw_version/$asset" \
+            --output "$archive"
+          echo "$sha256  $archive" | sha256sum --check -
+          mkdir -p "$RUNNER_TEMP/saw-release"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/saw-release"
+          saw_bin="$(find "$RUNNER_TEMP/saw-release" -type f -name saw -perm -100 | head -n 1)"
+          test -n "$saw_bin"
+          echo "SAW_BIN=$saw_bin" >> "$GITHUB_ENV"
+          echo "SAW_ARCHIVE=$archive" >> "$GITHUB_ENV"
+      - name: Resolve pinned LLVM 20
+        run: |
+          set -eu
+          nixpkgs_rev="$(sed -n 's/^nixpkgs_commit=//p' verification/saw/saw.lock)"
+          test -n "$nixpkgs_rev"
+          clang_root="$(nix build --no-link --print-out-paths \
+            "github:NixOS/nixpkgs/$nixpkgs_rev#llvmPackages_20.clang")"
+          llvm_root="$(nix build --no-link --print-out-paths \
+            "github:NixOS/nixpkgs/$nixpkgs_rev#llvmPackages_20.llvm")"
+          echo "SAW_CLANG=$clang_root/bin/clang" >> "$GITHUB_ENV"
+          echo "SAW_LLVM_LINK=$llvm_root/bin/llvm-link" >> "$GITHUB_ENV"
+      - name: Prove C, Rust-port, and production equivalence
+        run: |
+          CLANG="$SAW_CLANG" LLVM_LINK="$SAW_LLVM_LINK" \
+            verification/saw/run.sh
+
+  kani:
+    name: Kani binary kernels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify pinned reference hashes
+        run: verification/verify-references.sh
+      - name: Model-check production parsing kernels
+        uses: model-checking/kani-github-action@v1
+        with:
+          kani-version: "0.67.0"
+          command: cargo-kani
+          args: "--features binary,backend-cf-compat"
+
+  verus:
+    name: Verus executable CF reader port
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify pinned reference hashes
+        run: verification/verify-references.sh
+      - name: Install the Verus Rust toolchain
+        run: rustup toolchain install 1.97.1 --profile minimal
+      - name: Download pinned Verus release
+        env:
+          VERUS_ASSET: verus-0.2026.08.15.7d4628a-x86-linux.zip
+          VERUS_SHA256: 0467d3dd832e29d301abdd83d60237f0299d0a0acba3041388af066c8b31d1e4
+        run: |
+          set -eu
+          archive="$RUNNER_TEMP/$VERUS_ASSET"
+          curl --fail --location --retry 3 \
+            "https://github.com/verus-lang/verus/releases/download/release/0.2026.08.15.7d4628a/$VERUS_ASSET" \
+            --output "$archive"
+          echo "$VERUS_SHA256  $archive" | sha256sum --check -
+          mkdir -p "$RUNNER_TEMP/verus-release"
+          unzip -q "$archive" -d "$RUNNER_TEMP/verus-release"
+          verus_bin="$(find "$RUNNER_TEMP/verus-release" -type f -name verus -perm -100 | head -n 1)"
+          test -n "$verus_bin"
+          echo "VERUS_BIN=$verus_bin" >> "$GITHUB_ENV"
+      - name: Prove and compile the direct reader port
+        run: verification/verus/run.sh
